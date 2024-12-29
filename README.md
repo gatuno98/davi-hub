@@ -1,45 +1,50 @@
-local player = game.Players.LocalPlayer
-local camera = game.Workspace.CurrentCamera
-local Players = game.Players
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- Função para desenhar as linhas e os nomes
-local function drawPlayerInfo()
-    -- A cada frame, verifica os outros jogadores
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        -- Ignora o próprio jogador
-        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local otherPlayerRoot = otherPlayer.Character.HumanoidRootPart
-            local playerRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            
-            if playerRoot then
-                -- Cria uma linha entre os jogadores
-                local line = Instance.new("Part")
-                line.Size = Vector3.new(0.2, 0.2, (playerRoot.Position - otherPlayerRoot.Position).Magnitude)  -- Tamanho da linha
-                line.Anchored = true
-                line.CanCollide = false
-                line.BrickColor = BrickColor.White()  -- Cor branca
-                line.Material = Enum.Material.SmoothPlastic
-                line.CFrame = CFrame.new(playerRoot.Position, otherPlayerRoot.Position) * CFrame.new(0, 0, -line.Size.Z / 2)
-                line.Parent = game.Workspace
-                
-                -- Adiciona o nome do jogador acima da linha
-                local nameLabel = Instance.new("BillboardGui")
-                nameLabel.Adornee = otherPlayerRoot
-                nameLabel.Size = UDim2.new(0, 100, 0, 50)
-                nameLabel.StudsOffset = Vector3.new(0, 3, 0)
-                nameLabel.Parent = game.Workspace
-                
-                local nameText = Instance.new("TextLabel")
-                nameText.Size = UDim2.new(1, 0, 1, 0)
-                nameText.BackgroundTransparency = 1
-                nameText.Text = otherPlayer.Name
-                nameText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                nameText.TextStrokeTransparency = 0.8
-                nameText.Parent = nameLabel
+-- Função para criar o ESP (nome do jogador acima da cabeça)
+local function createESP(player)
+    -- Verifica se o personagem do jogador está carregado
+    local character = player.Character
+    if not character then return end
+
+    -- Espera a parte 'Head' do personagem ser carregada
+    local head = character:WaitForChild("Head")
+
+    -- Cria o BillboardGui para exibir o nome acima da cabeça
+    local billboardGui = Instance.new("BillboardGui")
+    billboardGui.Adornee = head  -- O nome será exibido sobre a cabeça
+    billboardGui.Size = UDim2.new(0, 200, 0, 50)  -- Define o tamanho do rótulo
+    billboardGui.StudsOffset = Vector3.new(0, 3, 0)  -- Ajusta a posição do nome acima da cabeça
+
+    -- Cria o TextLabel para mostrar o nome do jogador
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = billboardGui
+    textLabel.Text = player.Name  -- O texto será o nome do jogador
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Cor branca para o nome
+    textLabel.TextSize = 20  -- Tamanho do texto
+    textLabel.BackgroundTransparency = 1  -- Torna o fundo do texto transparente
+    textLabel.TextStrokeTransparency = 0.5  -- Adiciona uma borda sutil para dar melhor visibilidade ao texto
+
+    -- Adiciona o BillboardGui à CoreGui para garantir que seja visível para todos
+    billboardGui.Parent = game.CoreGui
+end
+
+-- Atualiza a lista de jogadores e cria o ESP para cada um
+RunService.Heartbeat:Connect(function()
+    -- Para cada jogador no jogo
+    for _, player in ipairs(Players:GetPlayers()) do
+        -- Evita que a ESP seja criada para o próprio jogador
+        if player ~= Players.LocalPlayer then
+            -- Verifica se o ESP já foi criado para esse jogador
+            if not player:FindFirstChild("ESP") then
+                -- Cria o ESP para o jogador
+                createESP(player)
+
+                -- Marca o jogador com um valor para saber que o ESP foi criado
+                local espTag = Instance.new("BoolValue")
+                espTag.Name = "ESP"
+                espTag.Parent = player
             end
         end
     end
-end
-
--- Chama a função a cada frame
-game:GetService("RunService").RenderStepped:Connect(drawPlayerInfo)
+end)
